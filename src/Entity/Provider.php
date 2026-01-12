@@ -6,49 +6,66 @@ use App\Repository\ProviderRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * CLASE / ENTIDAD PROVIDER 
- * Clase para Provider que hace referencia al proveedor de paquetes de viajes
- * Sus atributos son:
- *  - name: Nombre que hace referencia al nombre del proveedor (obligatorio)
- *  - email: email del proveedor (obligatorio)
- *  - phone: teléfono del proveedor (obligatorio)
- *  - type: Tipo de proveedor (Hotel, crucero, estación esquí o parque temático) (obligatorio)
- *  - isActive: Booleano para saber si el proveedor está activo o no (obligatorio)
- *  - createdAt: Fecha de creación (obligatorio)
- *  - updatedAt: Fecha de la última modificación / actualización (obligatorio)
+ * Entidad que representa a un Proveedor de servicios turísticos.
+ * * Esta clase mapea la tabla 'provider' en la base de datos y gestiona
+ * automáticamente las fechas de creación y actualización mediante Lifecycle Callbacks.
  */
 #[ORM\Entity(repositoryClass: ProviderRepository::class)]
+#[ORM\HasLifecycleCallbacks] // Necesario para que funcionen PrePersist y PreUpdate
 class Provider
 {
+    /**
+     * Identificador único autoincremental.
+     */
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    /**
+     * Nombre comercial del proveedor.
+     */
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
+    /**
+     * Correo electrónico de contacto.
+     */
     #[ORM\Column(length: 255)]
     private ?string $email = null;
 
+    /**
+     * Teléfono de contacto (guardado como string para soportar prefijos).
+     */
     #[ORM\Column(length: 20)]
     private ?string $phone = null;
 
+    /**
+     * Clasificación del proveedor (Hotel, Crucero, Esquí, Parque).
+     */
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $type = null;
 
+    /**
+     * Estado de disponibilidad del proveedor.
+     */
     #[ORM\Column]
     private ?bool $active = null;
 
+    /**
+     * Fecha y hora de registro inicial.
+     */
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    /**
+     * Fecha y hora de la última modificación.
+     */
     #[ORM\Column]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    /**
-     * FUNCIONES GETTERS
-     */
+    // --- MÉTODOS GETTERS Y SETTERS ---
+
     public function getId(): ?int
     {
         return $this->id;
@@ -62,7 +79,6 @@ class Provider
     public function setName(string $name): static
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -74,7 +90,6 @@ class Provider
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
@@ -86,7 +101,6 @@ class Provider
     public function setPhone(string $phone): static
     {
         $this->phone = $phone;
-
         return $this;
     }
 
@@ -95,13 +109,9 @@ class Provider
         return $this->type;
     }
 
-    /**
-     * FUNCIONES SETTERS
-     */
     public function setType(?string $type): static
     {
         $this->type = $type;
-
         return $this;
     }
 
@@ -113,7 +123,6 @@ class Provider
     public function setActive(bool $active): static
     {
         $this->active = $active;
-
         return $this;
     }
 
@@ -125,7 +134,6 @@ class Provider
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
-
         return $this;
     }
 
@@ -137,17 +145,15 @@ class Provider
     public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
-
         return $this;
     }
 
+    // --- EVENTOS DE CICLO DE VIDA (Lifecycle Callbacks) ---
 
     /**
-    * OTRAS FUNCIONES
-    * 
-    * Función para añadir las fechas en el momento de la creación 
-    * en createdAt y updatedAt
-    */
+     * Se ejecuta automáticamente justo antes de insertar el registro en la BD.
+     * Establece la fecha de creación y la de actualización inicial.
+     */
     #[ORM\PrePersist]
     public function setCreatedAtValue(): void
     {
@@ -156,7 +162,7 @@ class Provider
     }
 
     /**
-     * Función para actualizar la fecha updatedAt
+     * Se ejecuta automáticamente antes de cada actualización (UPDATE) en la BD.
      */
     #[ORM\PreUpdate]
     public function setUpdatedAtValue(): void
