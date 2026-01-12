@@ -64,13 +64,15 @@ docker-compose exec php bin/console doctrine:migrations:migrate --no-interaction
 docker-compose exec php bin/console doctrine:fixtures:load --no-interaction
 ```
 La aplicación estará disponible en: http://localhost:8000
-📂 Estructura del Proyecto
-src/Controller/: Controladores documentados bajo estándar PHPDoc con inyección de dependencias por constructor.
-src/Entity/Traits/: Uso de TimestampableTrait para gestión automática de fechas (escalabilidad).
-translations/: Diccionarios YAML para los 5 idiomas soportados.
-public/: Contiene el favicon y assets estáticos.
-Candidato: Guillem Masdeu de María
-Tecnologías: Symfony 7, PHP 8.2, Docker, MySQL, Bootstrap 5.3, DataTables.
+
+
+# 📂 Estructura del Proyecto
+- src/Controller/: Controladores documentados bajo estándar PHPDoc con inyección de dependencias por constructor.
+- src/Entity/Traits/: Uso de TimestampableTrait para gestión automática de fechas (escalabilidad).
+- translations/: Diccionarios YAML para los 5 idiomas soportados.
+- public/: Contiene el favicon y assets estáticos.
+- Candidato: Guillem Masdeu de María
+- Tecnologías: Symfony 7, PHP 8.2, Docker, MySQL, Bootstrap 5.3, DataTables.
 
 ### Notas Finales para tu entrega:
 1.  **Makefile:** Asegúrate de que tu archivo `Makefile` tiene los comandos que menciono (`setup`).
