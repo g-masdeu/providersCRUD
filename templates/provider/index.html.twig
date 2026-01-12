@@ -1,49 +1,42 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-{# 1. Definimos los colores para la tabla (Twig) #}
-{% set colors = {
-    'hotel': 'primary',
-    'crucero': 'success',
-    'esqui': 'info text-dark',
-    'parque': 'warning text-dark'
-} %}
+{% set colors = {'hotel': 'primary', 'crucero': 'success', 'esqui': 'info text-dark', 'parque': 'warning text-dark'} %}
 
 <div class="container mt-4">
-    {# Mensajes Flash #}
     {% for label, messages in app.flashes %}
         {% for message in messages %}
-            <div class="alert alert-{{ label == 'success' ? 'success' : 'warning' }} alert-dismissible fade show shadow-sm">
-                {{ message }}
+            <div class="alert alert-{{ label == 'success' ? 'success' : 'warning' }} alert-dismissible fade show shadow-sm flash-message">
+                <i class="bi {{ label == 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>
+                {{ message|trans }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         {% endfor %}
     {% endfor %}
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-secondary">Listado de Proveedores</h2>
-        <button class="btn btn-primary shadow-sm" onclick="loadForm('{{ path('app_provider_new') }}', 'Nuevo Proveedor')">
-            <i class="bi bi-plus-circle me-1"></i> Añadir Proveedor
+        <h2 class="fw-bold text-secondary">{{ 'list.title'|trans }}</h2>
+        <button class="btn btn-primary shadow-sm" onclick="loadForm('{{ path('app_provider_new') }}', '{{ 'modal.new_title'|trans }}')">
+            <i class="bi bi-plus-circle me-1"></i> {{ 'btn.add'|trans }}
         </button>
     </div>
 
-    <div class="bg-white shadow-sm rounded p-4">
-        <!-- FILTROS PERSONALIZADOS -->
+    <div class="bg-body shadow-sm rounded p-4">
         <div class="row mb-2 pb-3 border-bottom align-items-end">
             <div class="col-md-4">
-                <label class="form-label small fw-bold text-muted">Añadir filtro por Tipo</label>
+                <label class="form-label small fw-bold text-muted">{{ 'filter.label'|trans }}</label>
                 <select id="filterType" class="form-select form-select-sm">
-                    <option value="" selected disabled>Selecciona un tipo...</option>
-                    <option value="Hotel">Hotel</option>
-                    <option value="Crucero">Crucero</option>
-                    <option value="Esquí">Esquí</option>
-                    <option value="Parque">Parque</option>
+                    <option value="" selected disabled>{{ 'filter.placeholder'|trans }}</option>
+                    <option value="{{ 'type.hotel'|trans }}">{{ 'type.hotel'|trans }}</option>
+                    <option value="{{ 'type.crucero'|trans }}">{{ 'type.crucero'|trans }}</option>
+                    <option value="{{ 'type.esqui'|trans }}">{{ 'type.esqui'|trans }}</option>
+                    <option value="{{ 'type.parque'|trans }}">{{ 'type.parque'|trans }}</option>
                 </select>
             </div>
             <div class="col-md-8 text-end">
-                <small class="text-muted italic">Filtros activos por tipo:</small>
+                <small class="text-muted italic">{{ 'filter.active'|trans }}:</small>
                 <div id="activeFiltersContainer" class="mt-1">
-                    <span id="noFiltersMsg" class="text-muted small italic">Ninguno</span>
+                    <span id="noFiltersMsg" class="text-muted small italic">{{ 'filter.none'|trans }}</span>
                 </div>
             </div>
         </div>
@@ -51,13 +44,13 @@
         <table id="providerTable" class="table table-hover dt-responsive nowrap" style="width:100%">
             <thead>
                 <tr class="table-light">
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Teléfono</th>
-                    <th>Tipo</th>
-                    <th>Creado</th>
-                    <th>Actualizado</th>
-                    <th class="text-end">Acciones</th>
+                    <th>{{ 'table.name'|trans }}</th>
+                    <th>{{ 'table.email'|trans }}</th>
+                    <th>{{ 'table.phone'|trans }}</th>
+                    <th>{{ 'table.type'|trans }}</th>
+                    <th>{{ 'table.created'|trans }}</th>
+                    <th>{{ 'table.updated'|trans }}</th>
+                    <th class="text-end">{{ 'table.actions'|trans }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,18 +59,16 @@
                     <td class="fw-bold">{{ provider.name }}</td>
                     <td>{{ provider.email }}</td>
                     <td>{{ provider.phone }}</td>
-                    {# IMPORTANTE: Todo en una línea para evitar espacios que rompan el filtro #}
-                    <td><span class="badge bg-{{ colors[provider.type]|default('secondary') }}">{{ provider.type == 'esqui' ? 'Esquí' : (provider.type == 'parque' ? 'Parque' : provider.type|capitalize) }}</span></td>
-                    
-                    <td class="small text-muted">{{ provider.createdAt ? provider.createdAt|date('d/m/Y H:i') : 'N/A' }}</td>
-                    <td class="small text-muted">{{ provider.updatedAt ? provider.updatedAt|date('d/m/Y H:i') : 'N/A' }}</td>
+                    <td><span class="badge bg-{{ colors[provider.type]|default('secondary') }}">{{ ('type.' ~ provider.type)|trans }}</span></td>
+                    <td class="small text-muted">{{ provider.createdAt|date('d/m/Y H:i') }}</td>
+                    <td class="small text-muted">{{ provider.updatedAt|date('d/m/Y H:i') }}</td>
                     <td class="text-end">
                         <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-warning" onclick="loadForm('{{ path('app_provider_edit', {'id': provider.id}) }}', 'Editar Proveedor')" title="Editar">
+                            <button class="btn btn-sm btn-outline-warning" onclick="loadForm('{{ path('app_provider_edit', {'id': provider.id}) }}', '{{ 'modal.edit_title'|trans }}')">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-danger" 
-                                    onclick="confirmDelete('{{ path('app_provider_delete', {'id': provider.id}) }}', '{{ csrf_token('delete' ~ provider.id) }}')" title="Eliminar">
+                                    onclick="confirmDelete('{{ path('app_provider_delete', {'id': provider.id}) }}', '{{ csrf_token('delete' ~ provider.id) }}')">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -89,12 +80,12 @@
     </div>
 </div>
 
-{# Modales #}
+{# Modales (Mantienen su estructura pero con textos dinámicos) #}
 <div class="modal fade" id="modalApp" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title fw-bold" id="modalTitle"><i class="bi bi-briefcase me-2"></i> Formulario</h5>
+                <h5 class="modal-title fw-bold" id="modalTitle">{{ 'modal.loading'|trans }}</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4" id="modalBody"></div>
@@ -106,17 +97,17 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-danger text-white border-0">
-                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i> Confirmar acción</h5>
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i> {{ 'delete.title'|trans }}</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4 text-center">
-                <p class="mb-0">¿Estás seguro de que deseas eliminar este proveedor?</p>
+                <p class="mb-0">{{ 'delete.message'|trans }}</p>
             </div>
             <div class="modal-footer border-0 d-flex justify-content-center pb-4">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                <form id="deleteForm" method="post" action="">
-                    <input type="hidden" name="_token" id="deleteToken" value="">
-                    <button type="submit" class="btn btn-danger shadow-sm">Eliminar ahora</button>
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ 'btn.cancel'|trans }}</button>
+                <form id="deleteForm" method="post">
+                    <input type="hidden" name="_token" id="deleteToken">
+                    <button type="submit" class="btn btn-danger">{{ 'btn.delete_confirm'|trans }}</button>
                 </form>
             </div>
         </div>
@@ -130,25 +121,25 @@
     let activeTypes = []; 
     const deleteModalBS = new bootstrap.Modal(document.getElementById('deleteModal'));
 
-    // Mapa de colores para los badges de filtros
+    // Mapa de colores traducidos para los badges
     const typeColors = {
-        'Hotel': 'primary',
-        'Crucero': 'success',
-        'Esquí': 'info text-dark',
-        'Parque': 'warning text-dark'
+        '{{ 'type.hotel'|trans }}': 'primary',
+        '{{ 'type.crucero'|trans }}': 'success',
+        '{{ 'type.esqui'|trans }}': 'info text-dark',
+        '{{ 'type.parque'|trans }}': 'warning text-dark'
     };
 
     $(document).ready(function() {
-        // 1. Inicializar DataTable
         const table = $('#providerTable').DataTable({
             responsive: true,
-            language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
+            language: { 
+                url: `https://cdn.datatables.net/plug-ins/1.13.6/i18n/${'{{ app.request.locale }}' === 'ca' ? 'ca' : '{{ app.request.locale }}'}.json` 
+            },
             columnDefs: [{ orderable: false, targets: 6 }],
             order: [[4, 'desc']],
             dom: '<"row mb-3"<"col-md-6"l><"col-md-6"f>>rtip', 
         });
 
-        // 2. Lógica de Filtros Acumulativos
         $('#filterType').on('change', function() {
             const val = $(this).val();
             if (val && !activeTypes.includes(val)) {
@@ -161,43 +152,33 @@
         function renderBadges(tableInstance) {
             const container = $('#activeFiltersContainer');
             container.empty();
-
             if (activeTypes.length === 0) {
-                container.append('<span id="noFiltersMsg" class="text-muted small italic">Ninguno</span>');
+                container.append('<span class="text-muted small italic">{{ 'filter.none'|trans }}</span>');
                 tableInstance.column(3).search('').draw(); 
                 return;
             }
-
             activeTypes.forEach(type => {
                 const colorClass = typeColors[type] || 'secondary';
-                const badge = $(`
-                    <span class="badge bg-${colorClass} me-1 p-2 shadow-sm">
-                        ${type} 
-                        <i class="bi bi-x-lg ms-2 btn-remove-filter" style="cursor:pointer" data-type="${type}"></i>
-                    </span>
-                `);
-                container.append(badge);
+                container.append(`<span class="badge bg-${colorClass} me-1 p-2 shadow-sm">${type} <i class="bi bi-x-lg ms-2 btn-remove-filter" style="cursor:pointer" data-type="${type}"></i></span>`);
             });
-
-            // Creamos la Regex. Usamos JOIN con | (OR)
-            const searchString = activeTypes.join('|');
-            
-            // Filtramos la columna 3 (Tipo). smart=false para que use regex pura.
-            tableInstance.column(3).search(searchString, true, false).draw();
+            tableInstance.column(3).search(activeTypes.join('|'), true, false).draw();
         }
 
-        // Eliminar filtro
         $(document).on('click', '.btn-remove-filter', function() {
-            const typeToRemove = $(this).data('type');
-            activeTypes = activeTypes.filter(t => t !== typeToRemove);
+            activeTypes = activeTypes.filter(t => t !== $(this).data('type'));
             renderBadges(table);
         });
 
-        // Modales
         bsModal = new bootstrap.Modal(document.getElementById('modalApp'));
+
+        setTimeout(() => {
+            $('.flash-message').each(function() {
+                const alert = bootstrap.Alert.getOrCreateInstance(this);
+                if (alert) alert.close();
+            });
+        }, 3000);
     });
 
-    // Funciones AJAX
     function loadForm(url, title) {
         document.getElementById('modalTitle').innerText = title;
         document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
@@ -213,8 +194,7 @@
         if (!form) return;
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            const data = new FormData(form);
-            fetch(url, { method: 'POST', body: data }).then(res => {
+            fetch(url, { method: 'POST', body: new FormData(form) }).then(res => {
                 if (res.redirected) window.location.href = res.url;
                 else res.text().then(html => {
                     document.getElementById('modalBody').innerHTML = html;

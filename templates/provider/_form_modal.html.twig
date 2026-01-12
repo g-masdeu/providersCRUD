@@ -1,49 +1,43 @@
-{# templates/provider/_form_modal.html.twig #}
 {{ form_start(form, {'attr': {'id': 'ajax-form', 'class': 'needs-validation'}}) }}
     <div class="row g-3">
-        {# Campo Nombre #}
         <div class="col-12">
             <label class="form-label fw-bold" for="{{ form.name.vars.id }}">
-                <i class="bi bi-person me-1"></i> Nombre del Proveedor
+                <i class="bi bi-person me-1"></i> {{ 'form.name'|trans }}
             </label>
-            {{ form_widget(form.name, {'attr': {'class': 'form-control form-control-lg'}}) }}
-            {# IMPORTANTE: Muestra el error de "Ya existe este nombre" #}
-            <div class="text-danger small mt-1">{{ form_errors(form.name) }}</div>
-            <div class="form-text">Nombre comercial único en el sistema.</div>
+            {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
+            <div class="text-danger small mt-1">{{ form_errors(form.name)|trans }}</div>
         </div>
 
-        {# Email #}
         <div class="col-md-6">
             <label class="form-label fw-bold" for="{{ form.email.vars.id }}">
-                <i class="bi bi-envelope me-1"></i> Correo Electrónico
+                <i class="bi bi-envelope me-1"></i> {{ 'form.email'|trans }}
             </label>
             {{ form_widget(form.email, {'attr': {'class': 'form-control'}}) }}
-            <div class="text-danger small mt-1">{{ form_errors(form.email) }}</div>
+            <div class="text-danger small mt-1">{{ form_errors(form.email)|trans }}</div>
         </div>
 
-        {# Teléfono #}
         <div class="col-md-6">
             <label class="form-label fw-bold" for="{{ form.phone.vars.id }}">
-                <i class="bi bi-telephone me-1"></i> Teléfono
+                <i class="bi bi-telephone me-1"></i> {{ 'form.phone'|trans }}
             </label>
             {{ form_widget(form.phone, {'attr': {'class': 'form-control'}}) }}
-            <div class="text-danger small mt-1">{{ form_errors(form.phone) }}</div>
+            <div class="text-danger small mt-1">{{ form_errors(form.phone)|trans }}</div>
         </div>
 
-        {# Tipo de Proveedor #}
-        <div class="col-md-8">
+        <div class="col-md-12">
             <label class="form-label fw-bold" for="{{ form.type.vars.id }}">
-                <i class="bi bi-tag me-1"></i> Tipo de Proveedor
+                <i class="bi bi-tag me-1"></i> {{ 'form.type'|trans }}
             </label>
             {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
-            <div class="text-danger small mt-1">{{ form_errors(form.type) }}</div>
+            <div class="text-danger small mt-1">{{ form_errors(form.type)|trans }}</div>
         </div>
     </div>
 
     <div class="modal-footer px-0 pb-0 mt-4 border-top-0">
-        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">{{ 'btn.cancel'|trans }}</button>
         <button type="submit" class="btn btn-primary px-4 shadow">
-            <i class="bi bi-save me-2"></i> {{ (provider is defined and provider.id) ? 'Actualizar' : 'Guardar Proveedor' }}
+            <i class="bi bi-save me-2"></i> 
+            {{ (provider is defined and provider.id) ? 'btn.update'|trans : 'btn.save'|trans }}
         </button>
     </div>
 {{ form_end(form) }}
