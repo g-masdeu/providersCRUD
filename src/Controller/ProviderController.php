@@ -137,4 +137,42 @@ final class ProviderController extends AbstractController
 
         return $this->redirectToRoute('app_provider_index');
     }
+
+    /**
+     * Exporta el listado de proveedores activos a un archivo CSV.
+     * Optimizado para ser abierto directamente en Excel.
+     */
+    #[Route('/export/csv', name: 'app_provider_export', methods: ['GET'])]
+    public function exportCsv(ProviderRepository $repo): Response
+    {
+        $providers = $repo->findBy(['active' => true]);
+
+        // Usamos un buffer de memoria para crear el CSV
+        $handle = fopen('php://temp', 'r+');
+        
+        // Añadimos el BOM para que Excel detecte correctamente los acentos (UTF-8)
+        fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+        // Cabeceras del CSV (Traducibles si quieres, aquí fijas para el ejemplo)
+        fputcsv($handle, ['Nombre', 'Email', 'Teléfono', 'Tipo', 'Fecha de Registro'], ';');
+
+        foreach ($providers as $p) {
+            fputcsv($handle, [
+                $p->getName(),
+                $p->getEmail(),
+                $p->getPhone(),
+                ucfirst($p->getType()),
+                $p->getCreatedAt()->format('d/m/Y H:i')
+            ], ';');
+        }
+
+        rewind($handle);
+        $content = stream_get_contents($handle);
+        fclose($handle);
+
+        return new Response($content, 200, [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="proveedores_contabilidad.csv"',
+        ]);
+    }
 }

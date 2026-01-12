@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\ProviderRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Entidad que representa a un Proveedor de servicios turísticos.
@@ -29,19 +30,29 @@ class Provider
     /**
      * Nombre comercial del proveedor.
      */
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, unique: true)]
+    #[Assert\NotBlank(message: 'val.not_blank')]
+    #[Assert\Length(min: 3, max: 100, minMessage: 'val.name_min', maxMessage: 'val.name_max')]
     private ?string $name = null;
 
     /**
      * Correo electrónico de contacto.
      */
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, unique: true)]
+    #[Assert\NotBlank(message: 'val.not_blank')]
+    #[Assert\Email(message: 'val.email_invalid')]
     private ?string $email = null;
 
     /**
      * Teléfono de contacto (guardado como string para soportar prefijos).
      */
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(length: 20, unique: true)]
+    #[Assert\NotBlank(message: 'val.not_blank')]
+    // Expresión regular para validar teléfonos españoles (9 dígitos o con prefijo +34)
+    #[Assert\Regex(
+        pattern: '/^(\+34|0034|34)?[6789]\d{8}$/',
+        message: 'val.phone_invalid'
+    )]
     private ?string $phone = null;
 
     /**
