@@ -140,11 +140,25 @@ final class ProviderController extends AbstractController
     {
         if ($this->isCsrfTokenValid('delete' . $provider->getId(), $request->request->get('_token'))) {
             try {
+                // 1. Marcamos como inactivo
                 $provider->setActive(false);
+
+                // 2. Liberamos los campos UNIQUE añadiendo un sufijo de borrado
+                // Esto permite volver a crear un proveedor con los mismos datos originales
+                $suffix = '-DEL-' . uniqid();
+                
+                $provider->setName($provider->getName() . ' (Borrado)');
+                $provider->setEmail($provider->getEmail() . $suffix);
+                
+                // Ojo con la longitud del teléfono (el campo tiene 20 caracteres)
+                // Cortamos el teléfono original si es necesario para que quepa el sello
+                $cleanPhone = substr($provider->getPhone(), 0, 10) . $suffix;
+                $provider->setPhone(substr($cleanPhone, 0, 20));
+
                 $this->em->flush();
                 $this->addFlash('warning', 'flash.deleted');
             } catch (\Exception $e) {
-                $this->logger->error('Error al desactivar proveedor ID ' . $provider->getId() . ': ' . $e->getMessage());
+                $this->logger->error('Error al desactivar proveedor: ' . $e->getMessage());
                 $this->addFlash('danger', 'flash.error_generic');
             }
         }
