@@ -1,0 +1,41 @@
+{{ form_start(form, {'attr': {'id': 'ajax-form', 'class': 'needs-validation'}}) }}
+    <div class="row g-3">
+        {# Campo Nombre: Ocupa toda la fila #}
+        <div class="col-12">
+            <label class="form-label fw-bold"><i class="bi bi-person shadow-sm"></i> {{ form_label(form.name) }}</label>
+            {{ form_widget(form.name, {'attr': {'class': 'form-control form-control-lg'}}) }}
+            <div class="form-text">Nombre comercial del proveedor.</div>
+        </div>
+
+        {# Email y Teléfono: En paralelo en pantallas medianas #}
+        <div class="col-md-6">
+            <label class="form-label fw-bold"><i class="bi bi-envelope"></i> {{ form_label(form.email) }}</label>
+            {{ form_widget(form.email) }}
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold"><i class="bi bi-telephone"></i> {{ form_label(form.phone) }}</label>
+            {{ form_widget(form.phone) }}
+        </div>
+
+        {# Tipo de Proveedor #}
+        <div class="col-md-8">
+            <label class="form-label fw-bold"><i class="bi bi-tag"></i> {{ form_label(form.type) }}</label>
+            {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
+        </div>
+
+        {# Estado Activo: Estilo Switch de Bootstrap #}
+        <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check form-switch mb-2">
+                {{ form_widget(form.active, {'attr': {'class': 'form-check-input', 'role': 'switch'}}) }}
+                <label class="form-check-label fw-bold" for="{{ form.active.vars.id }}">¿Activo?</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer px-0 pb-0 mt-4 border-top-0">
+        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary px-4 shadow">
+            <i class="bi bi-save me-2"></i> {{ (provider is defined and provider.id) ? 'Actualizar' : 'Guardar Proveedor' }}
+        </button>
+    </div>
+{{ form_end(form) }}

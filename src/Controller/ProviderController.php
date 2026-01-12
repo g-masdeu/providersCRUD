@@ -23,8 +23,7 @@ final class ProviderController extends AbstractController
     public function index(ProviderRepository $repo): Response
     {
         // En el listado solemos querer solo los que están activos lógicamente
-        // Si quieres ver todos, usa findAll(), si no, findBy(['active' => true])
-        $providers = $repo->findAll();
+        $providers = $repo->findBy(['active' => true]);
 
         return $this->render('provider/index.html.twig', [
             'providers' => $providers,
@@ -38,7 +37,9 @@ final class ProviderController extends AbstractController
     public function new(Request $request, EntityManagerInterface $em): Response
     {
         $provider = new Provider();
-        $form = $this->createForm(ProviderType::class, $provider);
+        $form = $this->createForm(ProviderType::class, $provider, [
+            'action' => $this->generateUrl('app_provider_new'),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -49,8 +50,9 @@ final class ProviderController extends AbstractController
             return $this->redirectToRoute('app_provider_index');
         }
 
-        return $this->render('provider/new.html.twig', [
-            'form' => $form,
+        return $this->render('provider/_form_modal.html.twig', [
+            'form' => $form->createView(),
+            'provider' => $provider,
         ]);
     }
 
@@ -63,7 +65,9 @@ final class ProviderController extends AbstractController
     public function edit(Request $request, Provider $provider, EntityManagerInterface $em): Response
     {
         // El mismo formulario ProviderType sirve para editar
-        $form = $this->createForm(ProviderType::class, $provider);
+        $form = $this->createForm(ProviderType::class, $provider, [
+            'action' => $this->generateUrl('app_provider_edit', ['id' => $provider->getId()]),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -74,9 +78,9 @@ final class ProviderController extends AbstractController
             return $this->redirectToRoute('app_provider_index');
         }
 
-        return $this->render('provider/edit.html.twig', [
+        return $this->render('provider/_form_modal.html.twig', [
             'provider' => $provider,
-            'form' => $form,
+            'form' => $form->createView(),
         ]);
     }
 
@@ -88,11 +92,11 @@ final class ProviderController extends AbstractController
     public function delete(Request $request, Provider $provider, EntityManagerInterface $em): Response
     {
         // Verificamos el token CSRF por seguridad para evitar borrados accidentales/malintencionados
-        if ($this->isCsrfTokenValid('delete'.$provider->getId(), $request->request->get('_token'))) {
-            
+        if ($this->isCsrfTokenValid('delete' . $provider->getId(), $request->request->get('_token'))) {
+
             // --- BORRADO LÓGICO ---
             $provider->setActive(false);
-            
+
             $em->flush();
             $this->addFlash('warning', 'El proveedor ha sido desactivado.');
         }

@@ -1,20 +1,117 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello ProviderController!{% endblock %}
-
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+<div class="container mt-4">
+    {% for message in app.flashes('success') %}<div class="alert alert-success">{{ message }}</div>{% endfor %}
+    {% for message in app.flashes('warning') %}<div class="alert alert-warning">{{ message }}</div>{% endfor %}
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Listado de Proveedores</h2>
+        <button class="btn btn-primary" onclick="loadForm('{{ path('app_provider_new') }}', 'Nuevo Proveedor')">Añadir Proveedor</button>
+    </div>
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>C:/daw/prueba_vpt/src/Controller/ProviderController.php</code></li>
-        <li>Your template at <code>C:/daw/prueba_vpt/templates/provider/index.html.twig</code></li>
-    </ul>
+    <div class="table-responsive bg-white shadow-sm rounded p-3">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for provider in providers %}
+                <tr {% if not provider.active %}style="opacity:0.6" class="table-light"{% endif %}>
+                    <td>{{ provider.name }}</td>
+                    <td>{{ provider.email }}</td>
+                    <td><span class="badge bg-info text-dark">{{ provider.type|capitalize }}</span></td>
+                    <td>
+                        <span class="badge {{ provider.active ? 'bg-success' : 'bg-danger' }}">
+                            {{ provider.active ? 'Activo' : 'Inactivo' }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-warning" onclick="loadForm('{{ path('app_provider_edit', {'id': provider.id}) }}', 'Editar Proveedor')">Editar</button>
+                        <form method="post" action="{{ path('app_provider_delete', {'id': provider.id}) }}" style="display:inline" onsubmit="return confirm('¿Desactivar?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ provider.id) }}">
+                            <button class="btn btn-sm btn-outline-danger">Desactivar</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<!-- MODAL -->
+<div class="modal fade" id="modalApp" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg"> {# modal-lg para que respire mejor #}
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title fw-bold" id="modalTitle">
+                    <i class="bi bi-briefcase me-2"></i> Formulario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="modalBody">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Usamos let para poder inicializarla después
+    let bsModal;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializamos el modal una vez que el DOM y Bootstrap están listos
+        const modalElement = document.getElementById('modalApp');
+        if (modalElement) {
+            bsModal = new bootstrap.Modal(modalElement);
+        }
+    });
+
+    function loadForm(url, title) {
+        // Verificamos que bsModal exista antes de usarlo
+        if (!bsModal) {
+            console.error("Bootstrap no se ha cargado todavía");
+            return;
+        }
+
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        
+        bsModal.show();
+
+        fetch(url)
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById('modalBody').innerHTML = html;
+                
+                const form = document.querySelector('#modalBody form');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const actionUrl = form.getAttribute('action') || url;
+                        const data = new FormData(form);
+                        
+                        fetch(url, { method: 'POST', body: data })
+                            .then(res => {
+                                if (res.redirected) {
+                                    window.location.href = res.url;
+                                } else {
+                                    res.text().then(h => document.getElementById('modalBody').innerHTML = h);
+                                }
+                            });
+                    });
+                }
+            })
+            .catch(err => {
+                document.getElementById('modalBody').innerHTML = '<div class="alert alert-danger">Error al cargar.</div>';
+            });
+    }
+</script>
 {% endblock %}

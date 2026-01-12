@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ProviderRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * Entidad que representa a un Proveedor de servicios turísticos.
@@ -12,6 +13,9 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity(repositoryClass: ProviderRepository::class)]
 #[ORM\HasLifecycleCallbacks] // Necesario para que funcionen PrePersist y PreUpdate
+#[UniqueEntity(fields: ['email'], message: 'Ya existe un proveedor con este correo electrónico.')]
+#[UniqueEntity(fields: ['name'], message: 'Ya existe un proveedor con este nombre.')]
+#[UniqueEntity(fields: ['phone'], message: 'Ya existe un proveedor con este número de teléfono.')]
 class Provider
 {
     /**

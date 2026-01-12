@@ -4,9 +4,12 @@ namespace App\Form;
 
 use App\Entity\Provider;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\TelType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 
 /**
  * Clase de formulario para la entidad Provider.
@@ -24,13 +27,22 @@ class ProviderType extends AbstractType
     {
         $builder
             // Campo de texto simple
-            ->add('name')
+            ->add('name', TextType::class, [
+                'label' => 'Nombre', 
+                'attr' => ['placeholder' => 'Ej.: Hoteles ViajesParaTi']
+            ])
 
             // Campo para el correo electrónico
-            ->add('email')
+            ->add('email', EmailType::class, [
+                'label' => 'Correo Electrónico', 
+                'attr' => ['placeholder' => 'Ej.: ejemplo@ejemplo.com']
+            ])
 
             // Campo para el teléfono
-            ->add('phone')
+            ->add('phone', TelType::class, [
+                'label' => 'Teléfono', 
+                'attr' => ['placeholder' => 'Ej.: 612345678']
+            ])
 
             /**
              * Campo de selección (Select) para el tipo de proveedor.
