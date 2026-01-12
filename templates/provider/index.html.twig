@@ -1,43 +1,86 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
+{# 1. Definimos los colores para la tabla (Twig) #}
+{% set colors = {
+    'hotel': 'primary',
+    'crucero': 'success',
+    'esqui': 'info text-dark',
+    'parque': 'warning text-dark'
+} %}
+
 <div class="container mt-4">
-    {% for message in app.flashes('success') %}<div class="alert alert-success">{{ message }}</div>{% endfor %}
-    {% for message in app.flashes('warning') %}<div class="alert alert-warning">{{ message }}</div>{% endfor %}
+    {# Mensajes Flash #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label == 'success' ? 'success' : 'warning' }} alert-dismissible fade show shadow-sm">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Listado de Proveedores</h2>
-        <button class="btn btn-primary" onclick="loadForm('{{ path('app_provider_new') }}', 'Nuevo Proveedor')">Añadir Proveedor</button>
+        <h2 class="fw-bold text-secondary">Listado de Proveedores</h2>
+        <button class="btn btn-primary shadow-sm" onclick="loadForm('{{ path('app_provider_new') }}', 'Nuevo Proveedor')">
+            <i class="bi bi-plus-circle me-1"></i> Añadir Proveedor
+        </button>
     </div>
 
-    <div class="table-responsive bg-white shadow-sm rounded p-3">
-        <table class="table table-hover">
+    <div class="bg-white shadow-sm rounded p-4">
+        <!-- FILTROS PERSONALIZADOS -->
+        <div class="row mb-2 pb-3 border-bottom align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-muted">Añadir filtro por Tipo</label>
+                <select id="filterType" class="form-select form-select-sm">
+                    <option value="" selected disabled>Selecciona un tipo...</option>
+                    <option value="Hotel">Hotel</option>
+                    <option value="Crucero">Crucero</option>
+                    <option value="Esquí">Esquí</option>
+                    <option value="Parque">Parque</option>
+                </select>
+            </div>
+            <div class="col-md-8 text-end">
+                <small class="text-muted italic">Filtros activos por tipo:</small>
+                <div id="activeFiltersContainer" class="mt-1">
+                    <span id="noFiltersMsg" class="text-muted small italic">Ninguno</span>
+                </div>
+            </div>
+        </div>
+
+        <table id="providerTable" class="table table-hover dt-responsive nowrap" style="width:100%">
             <thead>
-                <tr>
+                <tr class="table-light">
                     <th>Nombre</th>
                     <th>Email</th>
+                    <th>Teléfono</th>
                     <th>Tipo</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th>Creado</th>
+                    <th>Actualizado</th>
+                    <th class="text-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
             {% for provider in providers %}
-                <tr {% if not provider.active %}style="opacity:0.6" class="table-light"{% endif %}>
-                    <td>{{ provider.name }}</td>
+                <tr>
+                    <td class="fw-bold">{{ provider.name }}</td>
                     <td>{{ provider.email }}</td>
-                    <td><span class="badge bg-info text-dark">{{ provider.type|capitalize }}</span></td>
-                    <td>
-                        <span class="badge {{ provider.active ? 'bg-success' : 'bg-danger' }}">
-                            {{ provider.active ? 'Activo' : 'Inactivo' }}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-warning" onclick="loadForm('{{ path('app_provider_edit', {'id': provider.id}) }}', 'Editar Proveedor')">Editar</button>
-                        <form method="post" action="{{ path('app_provider_delete', {'id': provider.id}) }}" style="display:inline" onsubmit="return confirm('¿Desactivar?');">
-                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ provider.id) }}">
-                            <button class="btn btn-sm btn-outline-danger">Desactivar</button>
-                        </form>
+                    <td>{{ provider.phone }}</td>
+                    {# IMPORTANTE: Todo en una línea para evitar espacios que rompan el filtro #}
+                    <td><span class="badge bg-{{ colors[provider.type]|default('secondary') }}">{{ provider.type == 'esqui' ? 'Esquí' : (provider.type == 'parque' ? 'Parque' : provider.type|capitalize) }}</span></td>
+                    
+                    <td class="small text-muted">{{ provider.createdAt ? provider.createdAt|date('d/m/Y H:i') : 'N/A' }}</td>
+                    <td class="small text-muted">{{ provider.updatedAt ? provider.updatedAt|date('d/m/Y H:i') : 'N/A' }}</td>
+                    <td class="text-end">
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-warning" onclick="loadForm('{{ path('app_provider_edit', {'id': provider.id}) }}', 'Editar Proveedor')" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="confirmDelete('{{ path('app_provider_delete', {'id': provider.id}) }}', '{{ csrf_token('delete' ~ provider.id) }}')" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             {% endfor %}
@@ -46,72 +89,145 @@
     </div>
 </div>
 
-<!-- MODAL -->
+{# Modales #}
 <div class="modal fade" id="modalApp" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg"> {# modal-lg para que respire mejor #}
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title fw-bold" id="modalTitle">
-                    <i class="bi bi-briefcase me-2"></i> Formulario
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title fw-bold" id="modalTitle"><i class="bi bi-briefcase me-2"></i> Formulario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4" id="modalBody">
-            </div>
+            <div class="modal-body p-4" id="modalBody"></div>
         </div>
     </div>
 </div>
 
-<script>
-    // Usamos let para poder inicializarla después
-    let bsModal;
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i> Confirmar acción</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="mb-0">¿Estás seguro de que deseas eliminar este proveedor?</p>
+            </div>
+            <div class="modal-footer border-0 d-flex justify-content-center pb-4">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="post" action="">
+                    <input type="hidden" name="_token" id="deleteToken" value="">
+                    <button type="submit" class="btn btn-danger shadow-sm">Eliminar ahora</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializamos el modal una vez que el DOM y Bootstrap están listos
-        const modalElement = document.getElementById('modalApp');
-        if (modalElement) {
-            bsModal = new bootstrap.Modal(modalElement);
+{% block javascripts %}
+<script>
+    let bsModal;
+    let activeTypes = []; 
+    const deleteModalBS = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+    // Mapa de colores para los badges de filtros
+    const typeColors = {
+        'Hotel': 'primary',
+        'Crucero': 'success',
+        'Esquí': 'info text-dark',
+        'Parque': 'warning text-dark'
+    };
+
+    $(document).ready(function() {
+        // 1. Inicializar DataTable
+        const table = $('#providerTable').DataTable({
+            responsive: true,
+            language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
+            columnDefs: [{ orderable: false, targets: 6 }],
+            order: [[4, 'desc']],
+            dom: '<"row mb-3"<"col-md-6"l><"col-md-6"f>>rtip', 
+        });
+
+        // 2. Lógica de Filtros Acumulativos
+        $('#filterType').on('change', function() {
+            const val = $(this).val();
+            if (val && !activeTypes.includes(val)) {
+                activeTypes.push(val);
+                renderBadges(table);
+            }
+            $(this).val(""); 
+        });
+
+        function renderBadges(tableInstance) {
+            const container = $('#activeFiltersContainer');
+            container.empty();
+
+            if (activeTypes.length === 0) {
+                container.append('<span id="noFiltersMsg" class="text-muted small italic">Ninguno</span>');
+                tableInstance.column(3).search('').draw(); 
+                return;
+            }
+
+            activeTypes.forEach(type => {
+                const colorClass = typeColors[type] || 'secondary';
+                const badge = $(`
+                    <span class="badge bg-${colorClass} me-1 p-2 shadow-sm">
+                        ${type} 
+                        <i class="bi bi-x-lg ms-2 btn-remove-filter" style="cursor:pointer" data-type="${type}"></i>
+                    </span>
+                `);
+                container.append(badge);
+            });
+
+            // Creamos la Regex. Usamos JOIN con | (OR)
+            const searchString = activeTypes.join('|');
+            
+            // Filtramos la columna 3 (Tipo). smart=false para que use regex pura.
+            tableInstance.column(3).search(searchString, true, false).draw();
         }
+
+        // Eliminar filtro
+        $(document).on('click', '.btn-remove-filter', function() {
+            const typeToRemove = $(this).data('type');
+            activeTypes = activeTypes.filter(t => t !== typeToRemove);
+            renderBadges(table);
+        });
+
+        // Modales
+        bsModal = new bootstrap.Modal(document.getElementById('modalApp'));
     });
 
+    // Funciones AJAX
     function loadForm(url, title) {
-        // Verificamos que bsModal exista antes de usarlo
-        if (!bsModal) {
-            console.error("Bootstrap no se ha cargado todavía");
-            return;
-        }
-
         document.getElementById('modalTitle').innerText = title;
         document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
-        
         bsModal.show();
+        fetch(url).then(r => r.text()).then(html => {
+            document.getElementById('modalBody').innerHTML = html;
+            setupFormSubmission(url);
+        });
+    }
 
-        fetch(url)
-            .then(r => r.text())
-            .then(html => {
-                document.getElementById('modalBody').innerHTML = html;
-                
-                const form = document.querySelector('#modalBody form');
-                if (form) {
-                    form.addEventListener('submit', function(e) {
-                        e.preventDefault();
-                        const actionUrl = form.getAttribute('action') || url;
-                        const data = new FormData(form);
-                        
-                        fetch(url, { method: 'POST', body: data })
-                            .then(res => {
-                                if (res.redirected) {
-                                    window.location.href = res.url;
-                                } else {
-                                    res.text().then(h => document.getElementById('modalBody').innerHTML = h);
-                                }
-                            });
-                    });
-                }
-            })
-            .catch(err => {
-                document.getElementById('modalBody').innerHTML = '<div class="alert alert-danger">Error al cargar.</div>';
+    function setupFormSubmission(url) {
+        const form = document.querySelector('#modalBody form');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = new FormData(form);
+            fetch(url, { method: 'POST', body: data }).then(res => {
+                if (res.redirected) window.location.href = res.url;
+                else res.text().then(html => {
+                    document.getElementById('modalBody').innerHTML = html;
+                    setupFormSubmission(url);
+                });
             });
+        });
+    }
+
+    function confirmDelete(url, token) {
+        document.getElementById('deleteForm').action = url;
+        document.getElementById('deleteToken').value = token;
+        deleteModalBS.show();
     }
 </script>
 {% endblock %}

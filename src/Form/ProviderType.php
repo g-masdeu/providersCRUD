@@ -60,13 +60,6 @@ class ProviderType extends AbstractType
                 'label' => 'Tipo de Proveedor'
             ])
 
-            /**
-             * Campo booleano. 
-             */
-            ->add('active', null, [
-                'label' => '¿Está activo?',
-                'required' => false,
-            ])
         ;
     }
 

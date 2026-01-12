@@ -54,7 +54,7 @@ class Provider
      * Estado de disponibilidad del proveedor.
      */
     #[ORM\Column]
-    private ?bool $active = null;
+    private ?bool $active = true;
 
     /**
      * Fecha y hora de registro inicial.

@@ -1,34 +1,42 @@
+{# templates/provider/_form_modal.html.twig #}
 {{ form_start(form, {'attr': {'id': 'ajax-form', 'class': 'needs-validation'}}) }}
     <div class="row g-3">
-        {# Campo Nombre: Ocupa toda la fila #}
+        {# Campo Nombre #}
         <div class="col-12">
-            <label class="form-label fw-bold"><i class="bi bi-person shadow-sm"></i> {{ form_label(form.name) }}</label>
+            <label class="form-label fw-bold" for="{{ form.name.vars.id }}">
+                <i class="bi bi-person me-1"></i> Nombre del Proveedor
+            </label>
             {{ form_widget(form.name, {'attr': {'class': 'form-control form-control-lg'}}) }}
-            <div class="form-text">Nombre comercial del proveedor.</div>
+            {# IMPORTANTE: Muestra el error de "Ya existe este nombre" #}
+            <div class="text-danger small mt-1">{{ form_errors(form.name) }}</div>
+            <div class="form-text">Nombre comercial único en el sistema.</div>
         </div>
 
-        {# Email y Teléfono: En paralelo en pantallas medianas #}
+        {# Email #}
         <div class="col-md-6">
-            <label class="form-label fw-bold"><i class="bi bi-envelope"></i> {{ form_label(form.email) }}</label>
-            {{ form_widget(form.email) }}
+            <label class="form-label fw-bold" for="{{ form.email.vars.id }}">
+                <i class="bi bi-envelope me-1"></i> Correo Electrónico
+            </label>
+            {{ form_widget(form.email, {'attr': {'class': 'form-control'}}) }}
+            <div class="text-danger small mt-1">{{ form_errors(form.email) }}</div>
         </div>
+
+        {# Teléfono #}
         <div class="col-md-6">
-            <label class="form-label fw-bold"><i class="bi bi-telephone"></i> {{ form_label(form.phone) }}</label>
-            {{ form_widget(form.phone) }}
+            <label class="form-label fw-bold" for="{{ form.phone.vars.id }}">
+                <i class="bi bi-telephone me-1"></i> Teléfono
+            </label>
+            {{ form_widget(form.phone, {'attr': {'class': 'form-control'}}) }}
+            <div class="text-danger small mt-1">{{ form_errors(form.phone) }}</div>
         </div>
 
         {# Tipo de Proveedor #}
         <div class="col-md-8">
-            <label class="form-label fw-bold"><i class="bi bi-tag"></i> {{ form_label(form.type) }}</label>
+            <label class="form-label fw-bold" for="{{ form.type.vars.id }}">
+                <i class="bi bi-tag me-1"></i> Tipo de Proveedor
+            </label>
             {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
-        </div>
-
-        {# Estado Activo: Estilo Switch de Bootstrap #}
-        <div class="col-md-4 d-flex align-items-end">
-            <div class="form-check form-switch mb-2">
-                {{ form_widget(form.active, {'attr': {'class': 'form-check-input', 'role': 'switch'}}) }}
-                <label class="form-check-label fw-bold" for="{{ form.active.vars.id }}">¿Activo?</label>
-            </div>
+            <div class="text-danger small mt-1">{{ form_errors(form.type) }}</div>
         </div>
     </div>
 
