@@ -17,7 +17,8 @@ Para este proyecto se ha priorizado un código **mantenible, escalable y robusto
 - **Localización Dinámica**: El motor de búsqueda y la interfaz de la tabla se adaptan automáticamente al idioma seleccionado.
 
 ### 3. Calidad y Seguridad (Backend)
-- **Borrado Lógico (Soft Delete)**: Se ha implementado un sistema de Soft Delete mediante el campo active. Para resolver el conflicto técnico con los índices UNIQUE de la base de datos (que impedirían registrar un nuevo proveedor con datos de uno borrado), el sistema aplica una anonimización automática del registro desactivado. Al borrar, se añade un sufijo de sistema a los campos únicos, liberando los valores originales de forma inmediata para nuevos registros pero preservando el histórico para auditoría contable.
+- **Borrado Lógico y Gestión de Unicidad**: Se ha implementado un sistema de **Soft Delete** mediante el campo `active` para cumplir con los requisitos de integridad del departamento de contabilidad. 
+Para resolver el conflicto técnico con los índices `UNIQUE` de la base de datos (que impedirían registrar un nuevo proveedor con los mismos datos de uno previamente borrado), el sistema aplica una **anonimización automática** del registro desactivado en el momento de la ejecución. Al "eliminar", se añade un sufijo de sistema único a los campos críticos (Nombre, Email y Teléfono), liberando los valores originales de forma inmediata para nuevos registros, pero preservando el histórico completo para futuras auditorías o consultas contables.
 - **Validación de Dominio**: Uso de `UniqueEntity` para garantizar que no existan nombres, emails o teléfonos duplicados, y validaciones de formato mediante **Regex**.
 - **Exportación Orientada a Negocio**: Generador de reportes CSV con codificación UTF-8 BOM para una compatibilidad total con Microsoft Excel.
 
