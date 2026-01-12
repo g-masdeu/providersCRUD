@@ -1,3 +1,10 @@
+{# 
+  Plantilla Base Principal (base.html.twig)
+  ------------------------------------------
+  Este archivo centraliza la estructura global, estilos compartidos y 
+  comportamientos transversales como el modo oscuro y la internacionalización.
+#}
+
 <!DOCTYPE html>
 <html lang="{{ app.request.locale }}" data-bs-theme="light">
     <head>
@@ -5,128 +12,254 @@
         <title>{% block title %}{{ 'page.title'|trans }}{% endblock %}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         
+        {# 1. RECURSOS EXTERNOS (Tipografía y Frameworks) #}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
         <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
         <link rel="icon" href="{{ asset('favicon.ico') }}">
         
+        {# 2. SISTEMA DE ESTILOS (CSS) #}
         {% block stylesheets %}
         <style>
-            body { display: flex; flex-direction: column; min-height: 100vh; transition: background-color 0.3s ease; }
+            /** 2.1 Variables y Configuración Global **/
+            :root {
+                --vpt-primary: #0d6efd;
+                --vpt-bg-light: #f8f9fa;
+                --vpt-transition: all 0.2s ease-in-out;
+            }
+
+            /** 2.2 Estructura de Layout (Sticky Footer) **/
+            body { 
+                font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+                background-color: var(--vpt-bg-light);
+                display: flex; 
+                flex-direction: column; 
+                min-height: 100vh;
+                letter-spacing: -0.01em;
+            }
+
             main { flex-grow: 1; }
-            .modal-content { border-radius: 15px; }
-            .sticky-top { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            [data-bs-theme="dark"] .bg-light { background-color: #212529 !important; }
-            [data-bs-theme="dark"] .bg-white { background-color: #2b3035 !important; }
-                /* MEJORA PARA MODALES EN MODO OSCURO */
-    [data-bs-theme="dark"] .modal-content {
-        background-color: #2b3035; /* Color de fondo oscuro de Bootstrap */
-        color: #ffffff;            /* Texto general en blanco */
-    }
 
-    [data-bs-theme="dark"] .modal-header {
-        border-bottom-color: #495057;
-    }
+            /** 2.3 Componentes UI Refinados **/
+            .navbar {
+                backdrop-filter: blur(10px);
+                background-color: rgba(13, 110, 253, 0.95) !important;
+                padding: 0.75rem 0;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
 
-    [data-bs-theme="dark"] .modal-footer {
-        border-top-color: #495057;
-    }
+            .card-modern {
+                background: #ffffff;
+                border: none;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+                padding: 1.5rem;
+            }
 
-    [data-bs-theme="dark"] .form-label {
-        color: #dee2e6; /* Color gris muy claro para los labels */
-    }
+            .btn {
+                border-radius: 8px;
+                font-weight: 500;
+                padding: 0.5rem 1.25rem;
+                transition: var(--vpt-transition);
+            }
 
-    [data-bs-theme="dark"] .form-text {
-        color: #adb5bd; /* Texto de ayuda un poco más apagado */
-    }
+            .btn-primary {
+                box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+            }
 
-    /* Asegurar que los inputs se vean bien */
-    [data-bs-theme="dark"] .form-control, 
-    [data-bs-theme="dark"] .form-select {
-        background-color: #212529;
-        border-color: #495057;
-        color: #ffffff;
-    }
+            .btn-primary:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 6px 15px rgba(13, 110, 253, 0.3);
+            }
 
-    [data-bs-theme="dark"] .form-control::placeholder {
-        color: #6c757d;
-    }
+            /** 2.4 Acciones de Tabla (CRUD UI) **/
+            .actions-wrapper {
+                display: flex;
+                gap: 8px;
+                justify-content: flex-end;
+            }
+
+            .btn-action {
+                width: 38px;
+                height: 38px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 10px !important;
+                border: 1px solid rgba(0,0,0,0.05) !important;
+                background-color: var(--bs-body-bg);
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                color: inherit;
+            }
+
+            .btn-action-edit:hover {
+                background-color: rgba(255, 193, 7, 0.1) !important;
+                border-color: rgba(255, 193, 7, 0.3) !important;
+                color: #ffc107 !important;
+                transform: translateY(-3px) scale(1.05);
+                box-shadow: 0 5px 15px rgba(255, 193, 7, 0.2);
+            }
+
+            .btn-action-delete:hover {
+                background-color: rgba(220, 53, 69, 0.1) !important;
+                border-color: rgba(220, 53, 69, 0.3) !important;
+                color: #dc3545 !important;
+                transform: translateY(-3px) scale(1.05);
+                box-shadow: 0 5px 15px rgba(220, 53, 69, 0.2);
+            }
+
+            .modal-content {
+                border-radius: 16px;
+                border: none;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            }
+
+            /** 2.5 Adaptación Modo Oscuro (Dark Mode) **/
+            [data-bs-theme="dark"] body { background-color: #121212; }
+            [data-bs-theme="dark"] .card-modern { background-color: #1e1e1e; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
+            [data-bs-theme="dark"] .bg-light { background-color: #121212 !important; }
+            
+            [data-bs-theme="dark"] .modal-content { background-color: #1e1e1e; color: #f8f9fa; }
+            [data-bs-theme="dark"] .form-control, 
+            [data-bs-theme="dark"] .form-select {
+                background-color: #2b3035;
+                border-color: #3d4246;
+                color: #ffffff;
+            }
+            [data-bs-theme="dark"] .form-label { color: #dee2e6; }
+            [data-bs-theme="dark"] .text-muted { color: #adb5bd !important; }
+
+            [data-bs-theme="dark"] .btn-export {
+                color: #dee2e6 !important;
+                border-color: rgba(255, 255, 255, 0.1) !important;
+            }
+
+            [data-bs-theme="dark"] .btn-export:hover {
+                color: #ffffff !important;
+                background-color: rgba(255, 255, 255, 0.05) !important;
+            }
+
+            [data-bs-theme="dark"] .btn-action { border-color: rgba(255,255,255,0.1) !important; }
+
+            footer {
+                background-color: transparent !important;
+                border-top: 1px solid rgba(0,0,0,0.05);
+                margin-top: auto;
+            }
+            [data-bs-theme="dark"] footer { border-top-color: rgba(255,255,255,0.05); }
         </style>
         {% endblock %}
 
+        {# 3. LÓGICA DE TEMA PRE-RENDER #}
+        {# Se ejecuta antes que el body para evitar el "destello blanco" (FOUC) #}
         <script>
-            const storedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'dark' : 'light');
-            document.documentElement.setAttribute('data-bs-theme', storedTheme);
+            const getStoredTheme = () => localStorage.getItem('theme');
+            const getPreferredTheme = () => {
+                const storedTheme = getStoredTheme();
+                if (storedTheme) return storedTheme;
+                return 'light'; 
+            };
+
+            document.documentElement.setAttribute('data-bs-theme', getPreferredTheme());
         </script>
     </head>
-    <body class="bg-light text-dark d-flex flex-column min-vh-100">
+
+    {# 4. ESTRUCTURA VISUAL (HTML) #}
+    <body class="bg-light d-flex flex-column min-vh-100">
         
+        {# 4.1 Navegación Principal (Sticky Header) #}
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top mb-4">
             <div class="container">
-                <a class="navbar-brand fw-bold" href="{{ path('app_provider_index') }}">
-                    <i class="bi bi-airplane-engines me-2"></i> Viajes Para Ti
+                <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ path('app_provider_index') }}">
+                    <i class="bi bi-airplane-engines-fill me-2"></i>
+                    <span>Viajes Para Ti</span>
                 </a>
                 
-                <div class="d-flex align-items-center">
-                    {# SELECTOR DE IDIOMA #}
+                <div class="d-flex align-items-center ms-auto">
+                    {# Selector de Idioma (I18n) #}
                     <div class="dropdown me-2">
-                        <button class="btn btn-link nav-link dropdown-toggle text-white" type="button" data-bs-toggle="dropdown">
+                        <button class="btn btn-link nav-link dropdown-toggle text-white p-2" type="button" data-bs-toggle="dropdown">
                             <i class="bi bi-translate"></i>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                            <li><a class="dropdown-item" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'es'})) }}">Español</a></li>
-                            <li><a class="dropdown-item" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'en'})) }}">English</a></li>
-                            <li><a class="dropdown-item" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'fr'})) }}">Français</a></li>
-                            <li><a class="dropdown-item" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'pt'})) }}">Português</a></li>
-                            <li><a class="dropdown-item" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'de'})) }}">Deutsch</a></li>
-                            <li><a class="dropdown-item" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'ca'})) }}">Català</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
+                            {# Generación dinámica de rutas manteniendo parámetros actuales #}
+                            <li><a class="dropdown-item py-2" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'es'})) }}">Español</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'en'})) }}">English</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'fr'})) }}">Français</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'de'})) }}">Deutsch</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': 'ca'})) }}">Català</a></li>
                         </ul>
                     </div>
 
-                    <button class="btn btn-link nav-link text-white me-3" id="themeToggle">
+                    {# Selector de Tema #}
+                    <button class="btn btn-link nav-link text-white p-2 me-3" id="themeToggle" aria-label="Cambiar tema">
                         <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
                     </button>
-                    <span class="navbar-text d-none d-md-block border-start ps-3">
-                        {{ 'nav.subtitle'|trans }}
-                    </span>
+
+                    {# Información de Sesión / Contexto #}
+                    <div class="navbar-text d-none d-md-block border-start border-white border-opacity-25 ps-3">
+                        <small class="opacity-75">{{ 'nav.subtitle'|trans }}</small>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <main>{% block body %}{% endblock %}</main>
+        {# 4.2 Contenedor de Contenido Dinámico #}
+        <main class="py-2">
+            {% block body %}{% endblock %}
+        </main>
 
-        <footer class="bg-body-tertiary border-top py-4 mt-5">
+        {# 4.3 Pie de Página (Footer) #}
+        <footer class="py-4 mt-3">
             <div class="container text-center">
-                <div class="row align-items-center">
-                    <span class="text-muted small">&copy; {{ "now"|date("Y") }}  Viajes Para Ti S.L.U.  |  Guillem Masdeu de María</span>
-                </div>
+                <p class="text-muted small mb-0">
+                    &copy; {{ "now"|date("Y") }} <strong>Viajes Para Ti S.L.U.</strong> 
+                    <span class="mx-2 text-opacity-25">|</span> 
+                    Guillem Masdeu de María
+                </p>
             </div>
         </footer>
 
+        {# 5. LÓGICA DE INTERFAZ (Scripts) #}
         <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        
         <script>
-            const htmlElement = document.documentElement;
+            /**
+             * Manejador de Cambio de Tema (Light/Dark Mode)
+             * Gestiona la actualización del DOM y la persistencia en LocalStorage.
+             */
             const themeToggle = document.getElementById('themeToggle');
             const themeIcon = document.getElementById('themeIcon');
+            const html = document.documentElement;
 
-            function updateIcon(theme) {
+            const updateUI = (theme) => {
                 themeIcon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
-            }
+            };
 
-            updateIcon(htmlElement.getAttribute('data-bs-theme'));
+            // Sincronización inicial del icono
+            updateUI(html.getAttribute('data-bs-theme'));
 
             themeToggle.addEventListener('click', () => {
-                const newTheme = htmlElement.getAttribute('data-bs-theme') === 'light' ? 'dark' : 'light';
-                htmlElement.setAttribute('data-bs-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                updateIcon(newTheme);
+                const current = html.getAttribute('data-bs-theme');
+                const next = current === 'light' ? 'dark' : 'light';
+                
+                html.setAttribute('data-bs-theme', next);
+                localStorage.setItem('theme', next);
+                updateUI(next);
             });
         </script>
+
         <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
         <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+        
+        {# 6. BLOQUES DE EXTENSIÓN PARA VISTAS HIJAS #}
         {% block javascripts %}{% endblock %}
     </body>
-</html> 
+</html>

@@ -1,42 +1,95 @@
-{{ form_start(form, {'attr': {'id': 'ajax-form', 'class': 'needs-validation'}}) }}
-    <div class="row g-3">
+{# 
+  Formulario Parcial: Gestión de Proveedores
+  ------------------------------------------
+  Este archivo es un fragmento (partial) diseñado para ser cargado vía AJAX dentro de un modal.
+  Mantiene una estética SaaS-moderna mediante el uso de fondos neutros y eliminación de bordes.
+  
+  Dependencias: 
+    - Bootstrap Icons (iconografía)
+    - Animate.css (opcional, para las transiciones de error)
+    - JavaScript global (setupFormSubmission) para el manejo del envío.
+#}
+
+{{ form_start(form, {
+    'attr': {
+        'id': 'ajax-form', 
+        'class': 'needs-validation'
+    }
+}) }}
+    <div class="row g-4">
+        
+        {# 1. SECCIÓN: IDENTIFICACIÓN PRINCIPAL #}
         <div class="col-12">
-            <label class="form-label fw-bold" for="{{ form.name.vars.id }}">
+            {# Uso de labels pequeños y en mayúsculas para un look profesional y limpio #}
+            <label class="form-label small fw-bold text-uppercase text-muted mb-2" style="font-size: 0.7rem; letter-spacing: 0.025em;">
                 <i class="bi bi-person me-1"></i> {{ 'form.name'|trans }}
             </label>
-            {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
-            <div class="text-danger small mt-1">{{ form_errors(form.name)|trans }}</div>
+            {# Atributos border-0 y bg-light para alinearse con la estética minimalista del dashboard #}
+            {{ form_widget(form.name, {'attr': {
+                'class': 'form-control border-0 bg-light py-2 px-3',
+                'placeholder': 'Ej. Viajes Para Ti S.L.'
+            }}) }}
+            {# Bloque de errores: Traducible y con animación de entrada #}
+            <div class="text-danger small mt-1 animate__animated animate__fadeIn" style="font-size: 0.75rem;">
+                {{ form_errors(form.name)|trans }}
+            </div>
         </div>
 
+        {# 2. SECCIÓN: DATOS DE CONTACTO (Layout responsive 1x2) #}
         <div class="col-md-6">
-            <label class="form-label fw-bold" for="{{ form.email.vars.id }}">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.025em;">
                 <i class="bi bi-envelope me-1"></i> {{ 'form.email'|trans }}
             </label>
-            {{ form_widget(form.email, {'attr': {'class': 'form-control'}}) }}
-            <div class="text-danger small mt-1">{{ form_errors(form.email)|trans }}</div>
+            {{ form_widget(form.email, {'attr': {
+                'class': 'form-control border-0 bg-light py-2 px-3',
+                'placeholder': 'contacto@proveedor.com'
+            }}) }}
+            <div class="text-danger small mt-1 animate__animated animate__fadeIn" style="font-size: 0.75rem;">
+                {{ form_errors(form.email)|trans }}
+            </div>
         </div>
 
         <div class="col-md-6">
-            <label class="form-label fw-bold" for="{{ form.phone.vars.id }}">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.025em;">
                 <i class="bi bi-telephone me-1"></i> {{ 'form.phone'|trans }}
             </label>
-            {{ form_widget(form.phone, {'attr': {'class': 'form-control'}}) }}
-            <div class="text-danger small mt-1">{{ form_errors(form.phone)|trans }}</div>
+            {{ form_widget(form.phone, {'attr': {
+                'class': 'form-control border-0 bg-light py-2 px-3',
+                'placeholder': '600 000 000'
+            }}) }}
+            <div class="text-danger small mt-1 animate__animated animate__fadeIn" style="font-size: 0.75rem;">
+                {{ form_errors(form.phone)|trans }}
+            </div>
         </div>
 
-        <div class="col-md-12">
-            <label class="form-label fw-bold" for="{{ form.type.vars.id }}">
+        {# 3. SECCIÓN: CATEGORIZACIÓN #}
+        <div class="col-12">
+            <label class="form-label small fw-bold text-muted text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.025em;">
                 <i class="bi bi-tag me-1"></i> {{ 'form.type'|trans }}
             </label>
-            {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
-            <div class="text-danger small mt-1">{{ form_errors(form.type)|trans }}</div>
+            {{ form_widget(form.type, {'attr': {
+                'class': 'form-select border-0 bg-light py-2 px-3'
+            }}) }}
+            <div class="text-danger small mt-1 animate__animated animate__fadeIn" style="font-size: 0.75rem;">
+                {{ form_errors(form.type)|trans }}
+            </div>
         </div>
     </div>
 
-    <div class="modal-footer px-0 pb-0 mt-4 border-top-0">
-        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">{{ 'btn.cancel'|trans }}</button>
-        <button type="submit" class="btn btn-primary px-4 shadow">
-            <i class="bi bi-save me-2"></i> 
+    {# 
+       FOOTER: Acciones del Modal
+       --------------------------
+       Implementa una jerarquía visual clara: 
+       - Botón secundario (Cancelar) como link plano.
+       - Botón primario (Guardar/Actualizar) con sombra y color de énfasis.
+    #}
+    <div class="modal-footer px-0 pb-0 mt-5 border-0">
+        <button type="button" class="btn btn-link text-decoration-none text-muted fw-medium px-4" data-bs-dismiss="modal">
+            {{ 'btn.cancel'|trans }}
+        </button>
+        <button type="submit" class="btn btn-primary px-5 py-2 shadow-sm fw-semibold">
+            <i class="bi bi-check2-circle me-2"></i> 
+            {# Lógica condicional para reutilizar el fragmento en flujos de creación y edición #}
             {{ (provider is defined and provider.id) ? 'btn.update'|trans : 'btn.save'|trans }}
         </button>
     </div>

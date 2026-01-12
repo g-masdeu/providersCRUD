@@ -6,6 +6,7 @@ use App\Entity\Provider;
 use App\Form\ProviderType;
 use App\Repository\ProviderRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,8 +15,9 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * ProviderController
  * 
- * Gestiona el ciclo de vida de los proveedores (CRUD).
- * Soporta multiidioma mediante el parámetro {_locale} y operaciones vía AJAX para modales.
+ * Clase principal para la gestión del ciclo de vida de los proveedores.
+ * Implementa un diseño robusto con inyección de dependencias, manejo de 
+ * excepciones y auditoría mediante logs.
  * 
  * @author Tu Nombre / Candidato
  */
@@ -23,38 +25,43 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ProviderController extends AbstractController
 {
     /**
+     * Constructor del controlador.
+     * 
+     * @param EntityManagerInterface $em Servicio para la gestión de la persistencia.
+     * @param LoggerInterface $logger Servicio para el registro de eventos y errores del sistema.
+     */
+    public function __construct(
+        private EntityManagerInterface $em,
+        private LoggerInterface $logger
+    ) {}
+
+    /**
      * Muestra el listado de proveedores activos.
      * 
-     * @param ProviderRepository $repo Repositorio para consultas a la base de datos.
-     * @return Response Vista con la tabla de proveedores.
+     * @param ProviderRepository $repo Repositorio especializado en la entidad Provider.
+     * @return Response Vista renderizada con el listado y componentes DataTables.
      */
     #[Route('', name: 'app_provider_index', methods: ['GET'])]
     public function index(ProviderRepository $repo): Response
     {
-        // Filtramos por active: true para implementar el borrado lógico (Soft Delete)
-        $providers = $repo->findBy(['active' => true]);
-
         return $this->render('provider/index.html.twig', [
-            'providers' => $providers,
+            'providers' => $repo->findBy(['active' => true]),
         ]);
     }
 
     /**
-     * Crea un nuevo registro de proveedor.
+     * Procesa la creación de un nuevo proveedor.
      * 
-     * En GET: Devuelve el formulario vacío para el modal.
-     * En POST: Procesa la validación y persiste en la base de datos.
+     * Incluye un bloque try-catch para gestionar fallos imprevistos en la persistencia
+     * y registra cualquier anomalía en los logs del servidor para facilitar el soporte.
      * 
-     * @param Request $request Objeto de petición de Symfony.
-     * @param EntityManagerInterface $em Gestor de entidades para persistencia.
-     * @return Response Fragmento HTML para el modal o redirección al index.
+     * @param Request $request Petición HTTP entrante.
+     * @return Response Redirección en éxito o fragmento HTML del formulario en caso de error/GET.
      */
     #[Route('/new', name: 'app_provider_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em): Response
+    public function new(Request $request): Response
     {
         $provider = new Provider();
-        
-        // Configuramos la acción del formulario explícitamente para evitar fallos en peticiones AJAX
         $form = $this->createForm(ProviderType::class, $provider, [
             'action' => $this->generateUrl('app_provider_new'),
         ]);
@@ -62,13 +69,21 @@ final class ProviderController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $em->persist($provider);
-            $em->flush();
+            try {
+                $this->em->persist($provider);
+                $this->em->flush();
 
-            // Usamos claves de traducción para los mensajes flash (mantenibilidad i18n)
-            $this->addFlash('success', 'flash.created');
-            
-            return $this->redirectToRoute('app_provider_index');
+                $this->addFlash('success', 'flash.created');
+                return $this->redirectToRoute('app_provider_index');
+            } catch (\Exception $e) {
+                // Registro del error técnico para depuración
+                $this->logger->error('Error al crear proveedor: ' . $e->getMessage(), [
+                    'exception' => $e,
+                    'data' => $request->request->all()
+                ]);
+                
+                $this->addFlash('danger', 'flash.error_generic');
+            }
         }
 
         return $this->render('provider/_form_modal.html.twig', [
@@ -78,18 +93,14 @@ final class ProviderController extends AbstractController
     }
 
     /**
-     * Edita un proveedor existente.
-     * 
-     * Utiliza el ParamConverter de Symfony para obtener automáticamente 
-     * el objeto Provider a partir del {id} de la URL.
+     * Actualiza la información de un proveedor existente.
      * 
      * @param Request $request
-     * @param Provider $provider Entidad inyectada automáticamente por ID.
-     * @param EntityManagerInterface $em
+     * @param Provider $provider Entidad cargada automáticamente vía ParamConverter.
      * @return Response
      */
     #[Route('/{id}/edit', name: 'app_provider_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Provider $provider, EntityManagerInterface $em): Response
+    public function edit(Request $request, Provider $provider): Response
     {
         $form = $this->createForm(ProviderType::class, $provider, [
             'action' => $this->generateUrl('app_provider_edit', ['id' => $provider->getId()]),
@@ -98,11 +109,14 @@ final class ProviderController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // No es necesario persist(), Doctrine detecta cambios en objetos gestionados (flushing)
-            $em->flush();
-
-            $this->addFlash('success', 'flash.updated');
-            return $this->redirectToRoute('app_provider_index');
+            try {
+                $this->em->flush();
+                $this->addFlash('success', 'flash.updated');
+                return $this->redirectToRoute('app_provider_index');
+            } catch (\Exception $e) {
+                $this->logger->error('Error al editar proveedor ID ' . $provider->getId() . ': ' . $e->getMessage());
+                $this->addFlash('danger', 'flash.error_generic');
+            }
         }
 
         return $this->render('provider/_form_modal.html.twig', [
@@ -112,49 +126,49 @@ final class ProviderController extends AbstractController
     }
 
     /**
-     * Realiza un borrado lógico del proveedor.
+     * Ejecuta el borrado lógico (desactivación) de un proveedor.
      * 
-     * Por seguridad y cumplimiento de estándares REST, solo acepta peticiones POST
-     * y requiere la validación de un token CSRF.
+     * Se requiere validación de token CSRF para prevenir ataques de falsificación 
+     * de peticiones en sitios cruzados.
      * 
      * @param Request $request
      * @param Provider $provider
-     * @param EntityManagerInterface $em
-     * @return Response Redirección al listado.
+     * @return Response
      */
     #[Route('/{id}/delete', name: 'app_provider_delete', methods: ['POST'])]
-    public function delete(Request $request, Provider $provider, EntityManagerInterface $em): Response
+    public function delete(Request $request, Provider $provider): Response
     {
-        // Validación rigurosa de seguridad contra ataques CSRF
         if ($this->isCsrfTokenValid('delete' . $provider->getId(), $request->request->get('_token'))) {
-            
-            // Implementación de Soft Delete: Mantenemos el registro para histórico contable
-            $provider->setActive(false);
-            $em->flush();
-            
-            $this->addFlash('warning', 'flash.deleted');
+            try {
+                $provider->setActive(false);
+                $this->em->flush();
+                $this->addFlash('warning', 'flash.deleted');
+            } catch (\Exception $e) {
+                $this->logger->error('Error al desactivar proveedor ID ' . $provider->getId() . ': ' . $e->getMessage());
+                $this->addFlash('danger', 'flash.error_generic');
+            }
         }
 
         return $this->redirectToRoute('app_provider_index');
     }
 
     /**
-     * Exporta el listado de proveedores activos a un archivo CSV.
-     * Optimizado para ser abierto directamente en Excel.
+     * Exporta el listado de proveedores activos a formato CSV.
+     * 
+     * Diseñado para facilitar la integración de datos con herramientas contables externas (Excel).
+     * Implementa manejo de codificación UTF-8 con BOM para asegurar la compatibilidad de caracteres.
+     * 
+     * @param ProviderRepository $repo
+     * @return Response Archivo CSV descargable.
      */
     #[Route('/export/csv', name: 'app_provider_export', methods: ['GET'])]
     public function exportCsv(ProviderRepository $repo): Response
     {
         $providers = $repo->findBy(['active' => true]);
-
-        // Usamos un buffer de memoria para crear el CSV
-        $handle = fopen('php://temp', 'r+');
         
-        // Añadimos el BOM para que Excel detecte correctamente los acentos (UTF-8)
-        fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-
-        // Cabeceras del CSV (Traducibles si quieres, aquí fijas para el ejemplo)
-        fputcsv($handle, ['Nombre', 'Email', 'Teléfono', 'Tipo', 'Fecha de Registro'], ';');
+        $handle = fopen('php://temp', 'r+');
+        fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM UTF-8
+        fputcsv($handle, ['Nombre', 'Email', 'Teléfono', 'Tipo', 'Fecha Registro'], ';');
 
         foreach ($providers as $p) {
             fputcsv($handle, [

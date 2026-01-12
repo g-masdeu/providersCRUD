@@ -1,12 +1,32 @@
+{# 
+  Vista Principal: Panel de Gestión de Proveedores
+  -----------------------------------------------
+  Esta plantilla orquestra el Dashboard principal, integrando:
+  - DataTables.net para la gestión avanzada de datos (ordenación, búsqueda).
+  - Sistema de filtrado acumulativo basado en etiquetas (badges).
+  - Flujo CRUD mediante Modales cargados dinámicamente vía AJAX.
+#}
+
 {% extends 'base.html.twig' %}
 
 {% block body %}
-{% set colors = {'hotel': 'primary', 'crucero': 'success', 'esqui': 'info text-dark', 'parque': 'warning text-dark'} %}
+{# 
+   1. CONFIGURACIÓN VISUAL (TWIG)
+   Mapeo centralizado de colores para badges. 
+   Mantenibilidad: Para cambiar la identidad de un tipo, solo se edita este objeto.
+#}
+{% set colors = {
+    'hotel': 'primary',
+    'crucero': 'success',
+    'esqui': 'info text-dark',
+    'parque': 'warning text-dark'
+} %}
 
-<div class="container mt-4">
+<div class="container mt-5">
+    {# 2. SISTEMA DE NOTIFICACIONES (Flash Messages) #}
     {% for label, messages in app.flashes %}
         {% for message in messages %}
-            <div class="alert alert-{{ label == 'success' ? 'success' : 'warning' }} alert-dismissible fade show shadow-sm flash-message">
+            <div class="alert alert-{{ label == 'success' ? 'success' : (label == 'warning' ? 'warning' : 'danger') }} alert-dismissible fade show shadow-sm flash-message border-0">
                 <i class="bi {{ label == 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>
                 {{ message|trans }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -14,24 +34,34 @@
         {% endfor %}
     {% endfor %}
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-secondary">{{ 'list.title'|trans }}</h2>
-    <div>
-        {# BOTÓN DE EXPORTAR #}
-        <a href="{{ path('app_provider_export') }}" class="btn btn-outline-secondary shadow-sm me-2">
-            <i class="bi bi-download me-1"></i> {{ 'btn.export'|trans|default('Exportar CSV') }}
-        </a>
-        <button class="btn btn-primary shadow-sm" onclick="loadForm('{{ path('app_provider_new') }}', '{{ 'modal.new_title'|trans }}')">
-            <i class="bi bi-plus-circle me-1"></i> {{ 'btn.add'|trans }}
-        </button>
+    {# 3. CABECERA DEL DASHBOARD #}
+    <div class="row align-items-center mb-5">
+        <div class="col">
+            <h1 class="h3 fw-bold mb-1 text-body">{{ 'list.title'|trans }}</h1>
+            <p class="text-muted small mb-0">{{ 'nav.subtitle'|trans }}</p>
+        </div>
+        <div class="col-auto">
+            <div class="d-flex gap-2">
+                {# Exportación orientada a negocio (Contabilidad) #}
+                <a href="{{ path('app_provider_export') }}" class="btn btn-light border bg-body shadow-sm btn-export">
+                    <i class="bi bi-download me-2"></i> {{ 'btn.export'|trans }}
+                </a>
+                <button class="btn btn-primary shadow" onclick="loadForm('{{ path('app_provider_new') }}', '{{ 'modal.new_title'|trans }}')">
+                    <i class="bi bi-plus-lg me-2"></i> {{ 'btn.add'|trans }}
+                </button>
+            </div>
+        </div>
     </div>
-</div>
 
-    <div class="bg-body shadow-sm rounded p-4">
-        <div class="row mb-2 pb-3 border-bottom align-items-end">
+    {# 4. CONTENEDOR DE DATOS (Card Modern) #}
+    <div class="card-modern bg-body">
+        {# 4.1 Barra de Filtros Dinámicos #}
+        <div class="row mb-4 pb-4 border-bottom align-items-end g-3">
             <div class="col-md-4">
-                <label class="form-label small fw-bold text-muted">{{ 'filter.label'|trans }}</label>
-                <select id="filterType" class="form-select form-select-sm">
+                <label class="form-label small fw-bold text-muted text-uppercase" style="font-size: 0.65rem;">
+                    {{ 'filter.label'|trans }}
+                </label>
+                <select id="filterType" class="form-select border-0 bg-light py-2">
                     <option value="" selected disabled>{{ 'filter.placeholder'|trans }}</option>
                     <option value="{{ 'type.hotel'|trans }}">{{ 'type.hotel'|trans }}</option>
                     <option value="{{ 'type.crucero'|trans }}">{{ 'type.crucero'|trans }}</option>
@@ -39,43 +69,52 @@
                     <option value="{{ 'type.parque'|trans }}">{{ 'type.parque'|trans }}</option>
                 </select>
             </div>
-            <div class="col-md-8 text-end">
-                <small class="text-muted italic">{{ 'filter.active'|trans }}:</small>
-                <div id="activeFiltersContainer" class="mt-1">
+            <div class="col-md-8 text-md-end">
+                <label class="form-label small fw-bold text-muted text-uppercase d-block" style="font-size: 0.65rem;">
+                    {{ 'filter.active'|trans }}
+                </label>
+                <div id="activeFiltersContainer" class="d-flex flex-wrap gap-2 justify-content-md-end pt-1">
                     <span id="noFiltersMsg" class="text-muted small italic">{{ 'filter.none'|trans }}</span>
                 </div>
             </div>
         </div>
 
-        <table id="providerTable" class="table table-hover dt-responsive nowrap" style="width:100%">
+        {# 4.2 Tabla de Proveedores #}
+        <table id="providerTable" class="table table-hover dt-responsive nowrap align-middle" style="width:100%">
             <thead>
-                <tr class="table-light">
-                    <th>{{ 'table.name'|trans }}</th>
-                    <th>{{ 'table.email'|trans }}</th>
-                    <th>{{ 'table.phone'|trans }}</th>
-                    <th>{{ 'table.type'|trans }}</th>
-                    <th>{{ 'table.created'|trans }}</th>
-                    <th>{{ 'table.updated'|trans }}</th>
-                    <th class="text-end">{{ 'table.actions'|trans }}</th>
+                <tr class="text-muted small text-uppercase">
+                    <th class="border-0">{{ 'table.name'|trans }}</th>
+                    <th class="border-0">{{ 'table.email'|trans }}</th>
+                    <th class="border-0">{{ 'table.phone'|trans }}</th>
+                    <th class="border-0">{{ 'table.type'|trans }}</th>
+                    <th class="border-0">{{ 'table.created'|trans }}</th>
+                    <th class="border-0">{{ 'table.updated'|trans }}</th>
+                    <th class="border-0 text-end">{{ 'table.actions'|trans }}</th>
                 </tr>
             </thead>
             <tbody>
             {% for provider in providers %}
                 <tr>
-                    <td class="fw-bold">{{ provider.name }}</td>
-                    <td>{{ provider.email }}</td>
-                    <td>{{ provider.phone }}</td>
+                    <td class="fw-bold text-body">{{ provider.name }}</td>
+                    <td class="text-secondary">{{ provider.email }}</td>
+                    <td class="text-secondary">{{ provider.phone }}</td>
+                    {# Sincronización de texto: El badge debe ser exacto al valor del filtro para el Regex #}
                     <td><span class="badge bg-{{ colors[provider.type]|default('secondary') }}">{{ ('type.' ~ provider.type)|trans }}</span></td>
+                    
                     <td class="small text-muted">{{ provider.createdAt|date('d/m/Y H:i') }}</td>
                     <td class="small text-muted">{{ provider.updatedAt|date('d/m/Y H:i') }}</td>
                     <td class="text-end">
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-warning" onclick="loadForm('{{ path('app_provider_edit', {'id': provider.id}) }}', '{{ 'modal.edit_title'|trans }}')">
-                                <i class="bi bi-pencil"></i>
+                        {# Wrapper de acciones con micro-interacciones CSS #}
+                        <div class="actions-wrapper">
+                            <button class="btn btn-action btn-action-edit shadow-sm" 
+                                    onclick="loadForm('{{ path('app_provider_edit', {'id': provider.id}) }}', '{{ 'modal.edit_title'|trans }}')" 
+                                    title="{{ 'btn.update'|trans }}">
+                                <i class="bi bi-pencil-square"></i>
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" 
-                                    onclick="confirmDelete('{{ path('app_provider_delete', {'id': provider.id}) }}', '{{ csrf_token('delete' ~ provider.id) }}')">
-                                <i class="bi bi-trash"></i>
+                            <button type="button" class="btn btn-action btn-action-delete shadow-sm" 
+                                    onclick="confirmDelete('{{ path('app_provider_delete', {'id': provider.id}) }}', '{{ csrf_token('delete' ~ provider.id) }}')" 
+                                    title="{{ 'btn.delete_confirm'|trans }}">
+                                <i class="bi bi-trash3"></i>
                             </button>
                         </div>
                     </td>
@@ -86,11 +125,11 @@
     </div>
 </div>
 
-{# Modales (Mantienen su estructura pero con textos dinámicos) #}
+{# 5. MODALES COMPARTIDOS (Single-container pattern) #}
 <div class="modal fade" id="modalApp" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white border-0">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white border-0 py-3">
                 <h5 class="modal-title fw-bold" id="modalTitle">{{ 'modal.loading'|trans }}</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -101,19 +140,19 @@
 
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-danger text-white border-0">
-                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i> {{ 'delete.title'|trans }}</h5>
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-danger text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle me-2"></i> {{ 'delete.title'|trans }}</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4 text-center">
-                <p class="mb-0">{{ 'delete.message'|trans }}</p>
+                <p class="mb-0 text-body">{{ 'delete.message'|trans }}</p>
             </div>
-            <div class="modal-footer border-0 d-flex justify-content-center pb-4">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ 'btn.cancel'|trans }}</button>
+            <div class="modal-footer border-0 d-flex justify-content-center pb-4 gap-2">
+                <button type="button" class="btn btn-light px-4 border" data-bs-dismiss="modal">{{ 'btn.cancel'|trans }}</button>
                 <form id="deleteForm" method="post">
                     <input type="hidden" name="_token" id="deleteToken">
-                    <button type="submit" class="btn btn-danger">{{ 'btn.delete_confirm'|trans }}</button>
+                    <button type="submit" class="btn btn-danger px-4 shadow-sm">{{ 'btn.delete_confirm'|trans }}</button>
                 </form>
             </div>
         </div>
@@ -123,11 +162,14 @@
 
 {% block javascripts %}
 <script>
+    /**
+     * Lógica de Interfaz de Usuario (UI Logic)
+     */
     let bsModal;
-    let activeTypes = []; 
+    let activeTypes = []; // Estado global de filtros activos
     const deleteModalBS = new bootstrap.Modal(document.getElementById('deleteModal'));
 
-    // Mapa de colores traducidos para los badges
+    // 1. Mapa de colores sincronizado con los valores traducidos (I18n consistency)
     const typeColors = {
         '{{ 'type.hotel'|trans }}': 'primary',
         '{{ 'type.crucero'|trans }}': 'success',
@@ -136,38 +178,57 @@
     };
 
     $(document).ready(function() {
+        
+        // 2. CONFIGURACIÓN DE DATATABLES
+        // Mapeo de locales Symfony -> locales DataTables CDN
+        const localeMapping = { 'es': 'es-ES', 'en': 'en-GB', 'fr': 'fr-FR', 'de': 'de-DE', 'ca': 'ca' };
+        const dtLocale = localeMapping['{{ app.request.locale }}'] || 'es-ES';
+
         const table = $('#providerTable').DataTable({
             responsive: true,
-            language: { 
-                url: `https://cdn.datatables.net/plug-ins/1.13.6/i18n/${'{{ app.request.locale }}' === 'ca' ? 'ca' : '{{ app.request.locale }}'}.json` 
-            },
+            language: { url: `https://cdn.datatables.net/plug-ins/1.13.6/i18n/${dtLocale}.json` },
             columnDefs: [{ orderable: false, targets: 6 }],
-            order: [[4, 'desc']],
-            dom: '<"row mb-3"<"col-md-6"l><"col-md-6"f>>rtip', 
+            order: [[4, 'desc']], // Ordenar por fecha de creación por defecto
+            dom: '<"row align-items-center mb-3"<"col-md-6"l><"col-md-6"f>>rtip', 
         });
 
+        // 3. SISTEMA DE FILTRADO ACUMULATIVO
         $('#filterType').on('change', function() {
             const val = $(this).val();
             if (val && !activeTypes.includes(val)) {
                 activeTypes.push(val);
                 renderBadges(table);
             }
-            $(this).val(""); 
+            $(this).val(""); // Reset select para permitir múltiples selecciones
         });
 
+        /**
+         * Actualiza visualmente las etiquetas de filtro y aplica Regex a la tabla.
+         * Escalabilidad: Permite filtrado tipo "OR" (ej. Hoteles O Cruceros).
+         */
         function renderBadges(tableInstance) {
             const container = $('#activeFiltersContainer');
             container.empty();
+            
             if (activeTypes.length === 0) {
-                container.append('<span class="text-muted small italic">{{ 'filter.none'|trans }}</span>');
+                container.append('<span id="noFiltersMsg" class="text-muted small italic">{{ 'filter.none'|trans }}</span>');
                 tableInstance.column(3).search('').draw(); 
                 return;
             }
+
             activeTypes.forEach(type => {
                 const colorClass = typeColors[type] || 'secondary';
-                container.append(`<span class="badge bg-${colorClass} me-1 p-2 shadow-sm">${type} <i class="bi bi-x-lg ms-2 btn-remove-filter" style="cursor:pointer" data-type="${type}"></i></span>`);
+                container.append(`
+                    <span class="badge bg-${colorClass} p-2 shadow-sm d-flex align-items-center animate__animated animate__fadeInScale">
+                        ${type} 
+                        <i class="bi bi-x-circle-fill ms-2 btn-remove-filter" style="cursor:pointer; opacity:0.8" data-type="${type}"></i>
+                    </span>
+                `);
             });
-            tableInstance.column(3).search(activeTypes.join('|'), true, false).draw();
+
+            // Construcción de Expresión Regular para búsqueda múltiple exacta
+            const searchString = activeTypes.join('|');
+            tableInstance.column(3).search(searchString, true, false).draw();
         }
 
         $(document).on('click', '.btn-remove-filter', function() {
@@ -175,19 +236,25 @@
             renderBadges(table);
         });
 
+        // 4. INICIALIZACIÓN DE COMPONENTES UI
         bsModal = new bootstrap.Modal(document.getElementById('modalApp'));
 
+        // Gestión automática de mensajes Flash
         setTimeout(() => {
             $('.flash-message').each(function() {
                 const alert = bootstrap.Alert.getOrCreateInstance(this);
                 if (alert) alert.close();
             });
-        }, 3000);
+        }, 3500);
     });
 
+    /**
+     * 5. LÓGICA AJAX (Flujo SPA)
+     * Carga el formulario en el modal sin recarga de página.
+     */
     function loadForm(url, title) {
         document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        document.getElementById('modalBody').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
         bsModal.show();
         fetch(url).then(r => r.text()).then(html => {
             document.getElementById('modalBody').innerHTML = html;
@@ -195,21 +262,40 @@
         });
     }
 
+    /**
+     * Intercepta el envío del formulario inyectado.
+     * Mantenibilidad: Maneja tanto redirecciones de éxito como errores de validación.
+     */
     function setupFormSubmission(url) {
         const form = document.querySelector('#modalBody form');
         if (!form) return;
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>...';
+
             fetch(url, { method: 'POST', body: new FormData(form) }).then(res => {
-                if (res.redirected) window.location.href = res.url;
-                else res.text().then(html => {
-                    document.getElementById('modalBody').innerHTML = html;
-                    setupFormSubmission(url);
-                });
+                if (res.redirected) {
+                    // Éxito: El servidor indica redirección al index
+                    window.location.href = res.url;
+                } else {
+                    // Error: El servidor devuelve el formulario con mensajes de validación
+                    res.text().then(html => {
+                        document.getElementById('modalBody').innerHTML = html;
+                        setupFormSubmission(url); // Re-vinculación necesaria tras inyección de DOM
+                    });
+                }
+            }).catch(err => {
+                submitBtn.disabled = false;
+                console.error('Error en la comunicación con el servidor:', err);
             });
         });
     }
 
+    /**
+     * Gestión del Modal de Borrado Físico/Lógico.
+     */
     function confirmDelete(url, token) {
         document.getElementById('deleteForm').action = url;
         document.getElementById('deleteToken').value = token;
