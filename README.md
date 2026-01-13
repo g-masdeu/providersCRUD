@@ -74,8 +74,3 @@ La aplicación estará disponible en: http://localhost:8000
 - public/: Contiene el favicon y assets estáticos.
 - Candidato: Guillem Masdeu de María
 - Tecnologías: Symfony 7, PHP 8.2, Docker, MySQL, Bootstrap 5.3, DataTables.
-
-### Notas Finales para tu entrega:
-1.  **Makefile:** Asegúrate de que tu archivo `Makefile` tiene los comandos que menciono (`setup`).
-2.  **Fixtures:** Si no instalaste el componente de fixtures, omite esa parte del README o instálalo rápido (`composer require --dev orm-fixtures`).
-3.  **URL:** He puesto el puerto `8000`, asegúrate de que es el que definiste en tu `docker-compose.yml`.
